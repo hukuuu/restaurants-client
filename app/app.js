@@ -5,13 +5,17 @@
 angular.module('myApp', [
     'ngResource',
     'ngRoute',
+    'ngAnimate',
     'ui.bootstrap',
     'config',
     'restaurants',
     'services',
     'authentication',
     'ngCookies',
-    'header'
+    'header',
+    'directives',
+    'toaster',
+    'loader-modal'
 ]).
 config(["$routeProvider", "$httpProvider", function($routeProvider, $httpProvider) {
     $routeProvider.when('/login', {
@@ -19,8 +23,16 @@ config(["$routeProvider", "$httpProvider", function($routeProvider, $httpProvide
         controller: 'LoginController'
     })
     $routeProvider.when('/restaurants', {
-        templateUrl: 'js/modules/restaurants/restaurants.html',
+        templateUrl: 'js/modules/restaurants/list.html',
         controller: 'RestaurantsController'
+    })
+    $routeProvider.when('/restaurants/view/:id', {
+        templateUrl: 'js/modules/restaurants/view.html',
+        controller: 'RestaurantController'
+    })
+    $routeProvider.when('/restaurants/new', {
+        templateUrl: 'js/modules/restaurants/new.html',
+        controller: 'RestaurantController'
     })
     $routeProvider.otherwise({
         redirectTo: '/'
@@ -31,28 +43,35 @@ config(["$routeProvider", "$httpProvider", function($routeProvider, $httpProvide
 
 }])
 
-.run(["$rootScope", "$location", "$cookieStore", "$http", function ($rootScope, $location, $cookieStore, $http) {
-     // keep user logged in after page refresh
-        $rootScope.globals = $cookieStore.get('globals') || {};
-        if ($rootScope.globals.currentUser) {
-            $http.defaults.headers.common['Authorization'] = 'Basic ' + $rootScope.globals.currentUser.authdata; // jshint ignore:line
+.run(["$rootScope", "$location", "$cookieStore", "$http", "loaderModalAPI", function($rootScope, $location, $cookieStore, $http, loaderModalAPI) {
+    // keep user logged in after page refresh
+    $rootScope.globals = $cookieStore.get('globals') || {};
+    if ($rootScope.globals.currentUser) {
+        $http.defaults.headers.common['Authorization'] = 'Basic ' + $rootScope.globals.currentUser.authdata; // jshint ignore:line
+    }
+
+    $rootScope.$on('$routeChangeStart', function(event, next, current) {
+        // redirect to login page if not logged in
+        loaderModalAPI.show()
+        var area = $location.url().split('/')[1];
+        if ($location.path() !== '/login' && (!$rootScope.globals || !$rootScope.globals.currentUser)) {
+            $location.path('/login');
         }
- 
-        $rootScope.$on('$routeChangeStart', function (event, next, current) {
-            // redirect to login page if not logged in
-            var area = $location.url().split('/')[1];
-            if ($location.path() !== '/login' && (!$rootScope.globals || !$rootScope.globals.currentUser) ) {
-                $location.path('/login');
-            }
-        });
+    });
+    $rootScope.$on('$routeChangeSuccess', function(scope, current, previous) {
+        loaderModalAPI.hide();
+    });
 }]);
 
 angular.module('authentication', []);
 angular.module('config', []);
+angular.module('directives',[]);
 angular.module('header',[]);
 angular.module('restaurants',[]);
 
 angular.module('services',[]);
+angular.module('config')
+  .constant('baseUrl', 'http://localhost:8080/restaurants/api/');
 'use strict';
 
 angular.module('services')
@@ -217,8 +236,29 @@ angular.module('authentication')
         };
     }])
 
-angular.module('config')
-  .constant('baseUrl', 'http://localhost:8080/restaurants/api/');
+angular.module('directives')
+    .directive('category', function() {
+        return {
+            restrict: 'E',
+            require: 'ngModel',
+            template: '<span class="label label-{{getColor(value)}}">{{value}}</span>',
+            replace: true,
+            link: function(scope, element, attrs, ngModel) {
+                scope.$watch(attrs.ngModel,function(val) {
+                    scope.value = val;
+                })
+
+                var colors = {
+                    'pub': 'default',
+                    'restaurant': 'danger'
+                }
+                scope.getColor = function(value) {
+                    return colors[value] || 'default'
+                }
+            }
+        }
+    });
+
 angular.module('header')
     .controller('HeaderController', ["$scope", "$location", "AuthenticationService", function($scope, $location, AuthenticationService) {
         console.log('obj');
@@ -235,18 +275,116 @@ angular.module('header')
     }]);
 
 angular.module('restaurants')
-    .controller('RestaurantsController', ["$scope", "RestaurantsService", function($scope, RestaurantsService) {
+    .controller('RestaurantController', ["$scope", "$routeParams", "$location", "$timeout", "RestaurantsService", "toaster", function($scope, $routeParams, $location, $timeout, RestaurantsService, toaster) {
+        var id = $routeParams.id,
+            VIEW_MODE = 'view',
+            CREATE_MODE = 'create',
+            EDIT_MODE = 'edit';
+        if (id) {
+            fetch(id)
+            $scope.mode = VIEW_MODE
+            $scope.editOrSave = 'Edit'
+        } else {
+            $scope.title = 'Create Restaurant'
+            $scope.restaurant = {}
+            $scope.mode = CREATE_MODE
+            $scope.editOrSave = 'Save'
+        }
+
+        $scope.delete = function(restaurant) {
+            RestaurantsService.delete(restaurant)
+                .$promise
+                .then(function() {
+                    toaster.pop('success', 'success', 'restaurant deleted.');
+                    var p = $location.path()
+                    $location.path(p.substring(0, p.indexOf('/view/')))
+                })
+                .catch(function(err) {
+                    toaster.pop('error', 'error', err);
+                })
+        }
+
+        $scope.navigate = function(path) {
+            var array = $location.path().split('/');
+            array[array.length - 2] = path
+            $location.path(array.join('/'))
+        }
+
+        $scope.save = function(restaurant) {
+            var action = restaurant.id ? 'update' : 'save'
+            RestaurantsService[action](restaurant)
+                .$promise
+                .then(function() {
+                    toaster.pop('success', 'success', 'restaurant ' + action + 'd');
+                })
+                .catch(function(err) {
+                    toaster.pop('error', 'error', err);
+                })
+        }
+
+        $scope.handleEditOrSave = function(restaurant) {
+            if ($scope.mode === VIEW_MODE) {
+                $scope.mode = EDIT_MODE
+                $scope.editOrSave = 'Save'
+            } else if ($scope.mode === EDIT_MODE) {
+                RestaurantsService.update(restaurant)
+                    .$promise
+                    .then(function() {
+                        toaster.pop('success', 'success', 'restaurant updated');
+                        $scope.mode = VIEW_MODE;
+                    })
+                    .catch(function(err) {
+                        toaster.pop('error', 'error', err);
+                    })
+            }
+        }
+
+        $scope.isEditMode = function() {
+            return $scope.mode === EDIT_MODE;
+        }
+
+        $scope.cancel = function() {
+            $scope.mode = VIEW_MODE
+            $scope.editOrSave = 'Edit'
+        }
+
+        function expose(prop) {
+            return function(item) {
+                console.log(item);
+                $scope[prop] = item;
+                return item;
+            }
+        }
+
+        function fetch(id) {
+            RestaurantsService.get({
+                id: id
+            })
+                .$promise
+                .then(expose('restaurant'))
+                .then(console.log.bind(console));
+        }
+
+    }]);
+
+angular.module('restaurants')
+    .controller('RestaurantsController', ["$scope", "$location", "RestaurantsService", function($scope, $location, RestaurantsService) {
         var fetch = function() {
             $scope.restaurants = RestaurantsService.query();
         }
-
         fetch();
-
+        $scope.navigate = function(path) {
+            $location.path($location.path() + path);
+        }
 
     }])
 
 angular.module('restaurants').factory('RestaurantsService', ["$resource", "baseUrl", function($resource, baseUrl) {
-     var Restaurants = $resource(baseUrl + 'secure/restaurants/:id', {id:'@id'});
+     var Restaurants = $resource(baseUrl + 'restaurants/:id', {id:'@id'}, {
+        update: {
+            method: 'PUT'
+        }
+     });
 
      return Restaurants;
 }]);

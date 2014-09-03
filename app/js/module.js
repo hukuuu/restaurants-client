@@ -5,13 +5,17 @@
 angular.module('myApp', [
     'ngResource',
     'ngRoute',
+    'ngAnimate',
     'ui.bootstrap',
     'config',
     'restaurants',
     'services',
     'authentication',
     'ngCookies',
-    'header'
+    'header',
+    'directives',
+    'toaster',
+    'loader-modal'
 ]).
 config(function($routeProvider, $httpProvider) {
     $routeProvider.when('/login', {
@@ -19,8 +23,16 @@ config(function($routeProvider, $httpProvider) {
         controller: 'LoginController'
     })
     $routeProvider.when('/restaurants', {
-        templateUrl: 'js/modules/restaurants/restaurants.html',
+        templateUrl: 'js/modules/restaurants/list.html',
         controller: 'RestaurantsController'
+    })
+    $routeProvider.when('/restaurants/view/:id', {
+        templateUrl: 'js/modules/restaurants/view.html',
+        controller: 'RestaurantController'
+    })
+    $routeProvider.when('/restaurants/new', {
+        templateUrl: 'js/modules/restaurants/new.html',
+        controller: 'RestaurantController'
     })
     $routeProvider.otherwise({
         redirectTo: '/'
@@ -31,18 +43,22 @@ config(function($routeProvider, $httpProvider) {
 
 })
 
-.run(function ($rootScope, $location, $cookieStore, $http) {
-     // keep user logged in after page refresh
-        $rootScope.globals = $cookieStore.get('globals') || {};
-        if ($rootScope.globals.currentUser) {
-            $http.defaults.headers.common['Authorization'] = 'Basic ' + $rootScope.globals.currentUser.authdata; // jshint ignore:line
+.run(function($rootScope, $location, $cookieStore, $http, loaderModalAPI) {
+    // keep user logged in after page refresh
+    $rootScope.globals = $cookieStore.get('globals') || {};
+    if ($rootScope.globals.currentUser) {
+        $http.defaults.headers.common['Authorization'] = 'Basic ' + $rootScope.globals.currentUser.authdata; // jshint ignore:line
+    }
+
+    $rootScope.$on('$routeChangeStart', function(event, next, current) {
+        // redirect to login page if not logged in
+        loaderModalAPI.show()
+        var area = $location.url().split('/')[1];
+        if ($location.path() !== '/login' && (!$rootScope.globals || !$rootScope.globals.currentUser)) {
+            $location.path('/login');
         }
- 
-        $rootScope.$on('$routeChangeStart', function (event, next, current) {
-            // redirect to login page if not logged in
-            var area = $location.url().split('/')[1];
-            if ($location.path() !== '/login' && (!$rootScope.globals || !$rootScope.globals.currentUser) ) {
-                $location.path('/login');
-            }
-        });
+    });
+    $rootScope.$on('$routeChangeSuccess', function(scope, current, previous) {
+        loaderModalAPI.hide();
+    });
 });

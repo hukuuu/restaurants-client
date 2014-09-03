@@ -1,0 +1,48 @@
+<h1 ng-if="!isEditMode()">{{restaurant.name}}</h1>
+<h1 ng-if="isEditMode()">
+    <input type="text" class="form-control" placeholder="name" ng-model="restaurant.name" />
+</h1>
+<div class="table-responsive">
+    <table class="table table-hover">
+
+        <tbody>
+            <tr>
+                <td><b>category</b>
+                </td>
+                <td ng-if="!isEditMode()">
+                    <category ng-model="restaurant.category" />
+                </td>
+                <td ng-if="isEditMode()">
+                    <input type="text" class="form-control" placeholder="category" ng-model="restaurant.category">
+                </td>
+            </tr>
+            <tr>
+                <td><b>address</b>
+                </td>
+                <td ng-if="!isEditMode()">{{restaurant.address}}</td>
+                <td ng-if="isEditMode()">
+                    <input type="text" class="form-control" placeholder="address" ng-model="restaurant.address">
+                </td>
+            </tr>
+            <tr>
+                <td><b>phone</b>
+                </td>
+                <td ng-if="!isEditMode()">{{restaurant.phone}}</td>
+                <td ng-if="isEditMode()">
+                    <input type="text" class="form-control" placeholder="phone" ng-model="restaurant.phone">
+                </td>
+            </tr>
+            <tr>
+                <td><b>open hours</b>
+                </td>
+                <td ng-if="!isEditMode()">{{restaurant.openHours}}</td>
+                <td ng-if="isEditMode()">
+                    <input type="text" class="form-control" placeholder="hours" ng-model="restaurant.openHours">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <button type="button" class="btn btn-outline btn-primary btn-lg btn-block" ng-click="handleEditOrSave(restaurant)">{{editOrSave}}</button>
+    <button ng-if="isEditMode()" type="button" class="btn btn-outline btn-warning btn-lg btn-block" ng-click="cancel()">Cancel</button>
+    <button type="button" class="btn btn-outline btn-danger btn-lg btn-block" ng-click="delete(restaurant)">Delete</button>
+</div>

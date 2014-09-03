@@ -13,6 +13,7 @@
     "html5-boilerplate": "~4.3.0",
     "angular-bootstrap": "~0.11.0",
     "angular-resource": "1.2.x",
-    "angular-cookies": "~1.2.23"
+    "angular-cookies": "~1.2.23",
+    "angular-notify-toaster": "~0.4.7"
   }
 }

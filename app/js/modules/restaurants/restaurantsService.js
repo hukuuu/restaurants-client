@@ -1,5 +1,9 @@
 angular.module('restaurants').factory('RestaurantsService', function($resource, baseUrl) {
-     var Restaurants = $resource(baseUrl + 'secure/restaurants/:id', {id:'@id'});
+     var Restaurants = $resource(baseUrl + 'restaurants/:id', {id:'@id'}, {
+        update: {
+            method: 'PUT'
+        }
+     });
 
      return Restaurants;
 });
