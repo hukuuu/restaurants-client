@@ -1,6 +1,5 @@
 'use strict';
 
-
 // Declare app level module which depends on filters, and services
 angular.module('myApp', [
     'ngResource',
@@ -9,6 +8,7 @@ angular.module('myApp', [
     'ui.bootstrap',
     'config',
     'restaurants',
+    'food',
     'services',
     'authentication',
     'ngCookies',
@@ -16,41 +16,44 @@ angular.module('myApp', [
     'directives',
     'toaster',
     'loader-modal'
-]).
-config(["$routeProvider", "$httpProvider", function($routeProvider, $httpProvider) {
-    $routeProvider.when('/login', {
-        templateUrl: 'js/modules/authentication/login.html',
-        controller: 'LoginController'
-    })
-    $routeProvider.when('/restaurants', {
-        templateUrl: 'js/modules/restaurants/list.html',
-        controller: 'RestaurantsController'
-    })
-    $routeProvider.when('/restaurants/view/:id', {
-        templateUrl: 'js/modules/restaurants/view.html',
-        controller: 'RestaurantController'
-    })
-    $routeProvider.when('/restaurants/new', {
-        templateUrl: 'js/modules/restaurants/new.html',
-        controller: 'RestaurantController'
-    })
-    $routeProvider.otherwise({
-        redirectTo: '/'
-    });
+])
+    .config(["$routeProvider", "$httpProvider", function ($routeProvider, $httpProvider) {
+        $routeProvider.when('/login', {
+            templateUrl: 'js/modules/authentication/login.html',
+            controller: 'LoginController'
+        })
+        $routeProvider.when('/restaurants', {
+            templateUrl: 'js/modules/restaurants/list.html',
+            controller: 'RestaurantsController'
+        })
+        $routeProvider.when('/restaurants/view/:id', {
+            templateUrl: 'js/modules/restaurants/view.html',
+            controller: 'RestaurantController'
+        })
+        $routeProvider.when('/restaurants/new', {
+            templateUrl: 'js/modules/restaurants/new.html',
+            controller: 'RestaurantController'
+        })
+        $routeProvider.when('/restaurants/view/:restaurantId/food', {
+            templateUrl: 'js/modules/food/list.html',
+            controller: 'FoodController'
+        })
+        $routeProvider.otherwise({
+            redirectTo: '/'
+        });
 
-    // $httpProvider.interceptors.push('AuthenticationInterceptor');
+        // $httpProvider.interceptors.push('AuthenticationInterceptor');
 
+    }])
 
-}])
-
-.run(["$rootScope", "$location", "$cookieStore", "$http", "loaderModalAPI", function($rootScope, $location, $cookieStore, $http, loaderModalAPI) {
+.run(["$rootScope", "$location", "$cookieStore", "$http", "loaderModalAPI", function ($rootScope, $location, $cookieStore, $http, loaderModalAPI) {
     // keep user logged in after page refresh
     $rootScope.globals = $cookieStore.get('globals') || {};
     if ($rootScope.globals.currentUser) {
         $http.defaults.headers.common['Authorization'] = 'Basic ' + $rootScope.globals.currentUser.authdata; // jshint ignore:line
     }
 
-    $rootScope.$on('$routeChangeStart', function(event, next, current) {
+    $rootScope.$on('$routeChangeStart', function (event, next, current) {
         // redirect to login page if not logged in
         loaderModalAPI.show()
         var area = $location.url().split('/')[1];
@@ -58,7 +61,7 @@ config(["$routeProvider", "$httpProvider", function($routeProvider, $httpProvide
             $location.path('/login');
         }
     });
-    $rootScope.$on('$routeChangeSuccess', function(scope, current, previous) {
+    $rootScope.$on('$routeChangeSuccess', function (scope, current, previous) {
         loaderModalAPI.hide();
     });
 }]);
@@ -66,12 +69,12 @@ config(["$routeProvider", "$httpProvider", function($routeProvider, $httpProvide
 angular.module('authentication', []);
 angular.module('config', []);
 angular.module('directives',[]);
+angular.module('food',[]);
+
 angular.module('header',[]);
 angular.module('restaurants',[]);
 
 angular.module('services',[]);
-angular.module('config')
-  .constant('baseUrl', 'http://localhost:8080/restaurants/api/');
 'use strict';
 
 angular.module('services')
@@ -259,6 +262,10 @@ angular.module('directives')
         }
     });
 
+angular.module('config')
+  .constant('baseUrl', 'http://localhost:8080/restaurants/api/')
+  .constant('baseImgUrl', 'http://localhost:8080/restaurants/resources/images');
+
 angular.module('header')
     .controller('HeaderController', ["$scope", "$location", "AuthenticationService", function($scope, $location, AuthenticationService) {
         console.log('obj');
@@ -273,6 +280,38 @@ angular.module('header')
         }
 
     }]);
+
+angular.module('food')
+    .filter('price', function () {
+        return function (input) {
+            var str = input + '';
+            if(str.indexOf('.') > -1)
+                return str;
+            return str + '.00';
+        };
+    });
+
+angular.module('food')
+    .controller('FoodController', ["$scope", "$routeParams", "baseImgUrl", "FoodServiceProvider", function ($scope, $routeParams, baseImgUrl, FoodServiceProvider) {
+        var restaurantId = $routeParams.restaurantId;
+        var foodService = FoodServiceProvider(restaurantId);
+
+        $scope.baseImgUrl = baseImgUrl;
+        $scope.food = foodService.query();
+        window.fs = foodService;
+    }]);
+
+angular.module('food').factory('FoodServiceProvider', ["$resource", "baseUrl", function ($resource, baseUrl) {
+    return function (restaurantId) {
+        return $resource(baseUrl + 'restaurants/'+restaurantId+'/food/:id', {
+            id: '@id'
+        }, {
+            update: {
+                method: 'PUT'
+            }
+        });
+    }
+}]);
 
 angular.module('restaurants')
     .controller('RestaurantController', ["$scope", "$routeParams", "$location", "$timeout", "RestaurantsService", "toaster", function($scope, $routeParams, $location, $timeout, RestaurantsService, toaster) {
@@ -305,9 +344,12 @@ angular.module('restaurants')
         }
 
         $scope.navigate = function(path) {
-            var array = $location.path().split('/');
-            array[array.length - 2] = path
-            $location.path(array.join('/'))
+            // var array = $location.path().split('/');
+            // array[array.length - 2] = path
+            // console.log(array.join('/'));
+            // $location.path(array.join('/'))
+            console.log($location.path() + path);
+            $location.path($location.path() + path);
         }
 
         $scope.save = function(restaurant) {
@@ -342,7 +384,12 @@ angular.module('restaurants')
         $scope.isEditMode = function() {
             return $scope.mode === EDIT_MODE;
         }
-
+        $scope.cancelCreation = function () {
+            var array = $location.path().split('/');
+            array.pop()
+            console.log(array.join('/'));
+            $location.path(array.join('/'))
+        }
         $scope.cancel = function() {
             $scope.mode = VIEW_MODE
             $scope.editOrSave = 'Edit'
@@ -375,6 +422,9 @@ angular.module('restaurants')
         fetch();
         $scope.navigate = function(path) {
             $location.path($location.path() + path);
+        }
+        $scope.gotRestaurants = function () {
+            return $scope.restaurants.length > 0;
         }
 
     }])

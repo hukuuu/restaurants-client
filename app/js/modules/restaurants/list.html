@@ -1,25 +1,30 @@
-<h1>See your restaurants</h1>
-<div class="table-responsive">
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Address</th>
-                <th>Phone</th>
-                <th>Open Hours</th>
-                <th>Category</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr ng-repeat="restaurant in restaurants" ng-click="navigate('/view/'+restaurant.id)">
-                <td>{{restaurant.name}}</td>
-                <td>{{restaurant.address}}</td>
-                <td>{{restaurant.phone}}</td>
-                <td>{{restaurant.openHours}}</td>
-                <td>
-                    <category ng-model="restaurant.category" />
-                </td>
-            </tr>
-    </table>
+<div ng-if="gotRestaurants()">
+    <h1>See your restaurants</h1>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Phone</th>
+                    <th>Open Hours</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="restaurant in restaurants" ng-click="navigate('/view/'+restaurant.id)">
+                    <td>{{restaurant.name}}</td>
+                    <td>{{restaurant.address}}</td>
+                    <td>{{restaurant.phone}}</td>
+                    <td>{{restaurant.openHours}}</td>
+                    <td>
+                        <category ng-model="restaurant.category" />
+                    </td>
+                </tr>
+        </table>
+    </div>
+    <button type="button" class="btn btn-outline btn-primary btn-lg btn-block" ng-click="navigate('/new')">New</button>
 </div>
-<button type="button" class="btn btn-outline btn-primary btn-lg btn-block" ng-click="navigate('/new')">New</button>
+<div ng-if="!gotRestaurants()" class="jumbotron" style="margin-top:100px;">
+    <h1>No restaurants. Why don't you <a ng-click="navigate('/new')">create one ?</a></h1>
+</div>

@@ -1,0 +1,17 @@
+<h1>Available food</h1>
+<div class="row">
+    <div ng-repeat="f in food" class="col-sm-3">
+        <div class="thumbnail">
+            <img ng-src="{{baseImgUrl + f.picture}}" alt="{{f.picture}}" style="width:100%">
+            <div class="caption">
+                <h3>{{f.title}}</h3>
+                <p>{{f.description}}
+                </p>
+                <p style="text-align:right;"><small>Price: <b>{{f.price | price | currency:'&#8364;'}}</b> per {{f.serving}}</small>
+                </p>
+                <p><a href="#" class="btn btn-primary" role="button">Button</a>  <a href="#" class="btn btn-default" role="button">Button</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

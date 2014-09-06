@@ -29,9 +29,12 @@ angular.module('restaurants')
         }
 
         $scope.navigate = function(path) {
-            var array = $location.path().split('/');
-            array[array.length - 2] = path
-            $location.path(array.join('/'))
+            // var array = $location.path().split('/');
+            // array[array.length - 2] = path
+            // console.log(array.join('/'));
+            // $location.path(array.join('/'))
+            console.log($location.path() + path);
+            $location.path($location.path() + path);
         }
 
         $scope.save = function(restaurant) {
@@ -66,7 +69,12 @@ angular.module('restaurants')
         $scope.isEditMode = function() {
             return $scope.mode === EDIT_MODE;
         }
-
+        $scope.cancelCreation = function () {
+            var array = $location.path().split('/');
+            array.pop()
+            console.log(array.join('/'));
+            $location.path(array.join('/'))
+        }
         $scope.cancel = function() {
             $scope.mode = VIEW_MODE
             $scope.editOrSave = 'Edit'

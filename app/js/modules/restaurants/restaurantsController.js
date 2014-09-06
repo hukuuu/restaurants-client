@@ -7,5 +7,8 @@ angular.module('restaurants')
         $scope.navigate = function(path) {
             $location.path($location.path() + path);
         }
+        $scope.gotRestaurants = function () {
+            return $scope.restaurants.length > 0;
+        }
 
     })
