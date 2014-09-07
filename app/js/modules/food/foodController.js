@@ -1,5 +1,5 @@
 angular.module('food')
-    .controller('FoodController', function ($scope, $routeParams, baseImgUrl, FoodServiceProvider) {
+    .controller('FoodController', function ($scope, $routeParams, baseImgUrl, food, FoodServiceProvider) {
         var restaurantId = $routeParams.restaurantId;
         var foodService = FoodServiceProvider(restaurantId);
 

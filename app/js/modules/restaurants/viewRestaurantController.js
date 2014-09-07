@@ -1,11 +1,13 @@
 angular.module('restaurants')
-    .controller('RestaurantController', function($scope, $routeParams, $location, $timeout, RestaurantsService, toaster) {
+    .controller('ViewRestaurantController', function($scope, $routeParams, $location, $timeout, restaurant, RestaurantsService, toaster) {
+
+        $scope.restaurant = restaurant;
+
         var id = $routeParams.id,
             VIEW_MODE = 'view',
             CREATE_MODE = 'create',
             EDIT_MODE = 'edit';
         if (id) {
-            fetch(id)
             $scope.mode = VIEW_MODE
             $scope.editOrSave = 'Edit'
         } else {
@@ -29,24 +31,7 @@ angular.module('restaurants')
         }
 
         $scope.navigate = function(path) {
-            // var array = $location.path().split('/');
-            // array[array.length - 2] = path
-            // console.log(array.join('/'));
-            // $location.path(array.join('/'))
-            console.log($location.path() + path);
             $location.path($location.path() + path);
-        }
-
-        $scope.save = function(restaurant) {
-            var action = restaurant.id ? 'update' : 'save'
-            RestaurantsService[action](restaurant)
-                .$promise
-                .then(function() {
-                    toaster.pop('success', 'success', 'restaurant ' + action + 'd');
-                })
-                .catch(function(err) {
-                    toaster.pop('error', 'error', err);
-                })
         }
 
         $scope.handleEditOrSave = function(restaurant) {
@@ -69,32 +54,10 @@ angular.module('restaurants')
         $scope.isEditMode = function() {
             return $scope.mode === EDIT_MODE;
         }
-        $scope.cancelCreation = function () {
-            var array = $location.path().split('/');
-            array.pop()
-            console.log(array.join('/'));
-            $location.path(array.join('/'))
-        }
+
         $scope.cancel = function() {
             $scope.mode = VIEW_MODE
             $scope.editOrSave = 'Edit'
-        }
-
-        function expose(prop) {
-            return function(item) {
-                console.log(item);
-                $scope[prop] = item;
-                return item;
-            }
-        }
-
-        function fetch(id) {
-            RestaurantsService.get({
-                id: id
-            })
-                .$promise
-                .then(expose('restaurant'))
-                .then(console.log.bind(console));
         }
 
     });

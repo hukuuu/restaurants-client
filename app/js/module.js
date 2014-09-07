@@ -24,19 +24,36 @@ angular.module('myApp', [
         })
         $routeProvider.when('/restaurants', {
             templateUrl: 'js/modules/restaurants/list.html',
-            controller: 'RestaurantsController'
+            controller: 'RestaurantsController',
+            resolve: {
+                restaurants : function (RestaurantsService) {
+                    return RestaurantsService.query().$promise;
+                }
+            }
         })
         $routeProvider.when('/restaurants/view/:id', {
             templateUrl: 'js/modules/restaurants/view.html',
-            controller: 'RestaurantController'
+            controller: 'ViewRestaurantController',
+            resolve: {
+                restaurant: function ($route, RestaurantsService) {
+                    return RestaurantsService.get({id:$route.current.params.id}).$promise;
+                }
+            }
         })
         $routeProvider.when('/restaurants/new', {
             templateUrl: 'js/modules/restaurants/new.html',
-            controller: 'RestaurantController'
+            controller: 'NewRestaurantController'
         })
         $routeProvider.when('/restaurants/view/:restaurantId/food', {
             templateUrl: 'js/modules/food/list.html',
-            controller: 'FoodController'
+            controller: 'FoodController',
+            resolve: {
+                food: function ($route, FoodServiceProvider) {
+                    var restaurantId = $route.current.params.restaurantId;
+                    var foodService = FoodServiceProvider(restaurantId);
+                    return foodService.query().$promise;
+                }
+            }
         })
         $routeProvider.otherwise({
             redirectTo: '/'
