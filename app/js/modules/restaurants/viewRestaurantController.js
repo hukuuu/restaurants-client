@@ -39,11 +39,15 @@ angular.module('restaurants')
                 $scope.mode = EDIT_MODE
                 $scope.editOrSave = 'Save'
             } else if ($scope.mode === EDIT_MODE) {
+                console.log(restaurant);
+                delete restaurant.$promise;
+                delete restaurant.$resolved;
                 RestaurantsService.update(restaurant)
                     .$promise
                     .then(function() {
                         toaster.pop('success', 'success', 'restaurant updated');
                         $scope.mode = VIEW_MODE;
+                        $scope.editOrSave = 'Edit'
                     })
                     .catch(function(err) {
                         toaster.pop('error', 'error', err);
